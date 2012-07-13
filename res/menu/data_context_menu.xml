@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >    
+    <item android:id="@+id/replayTag" android:title="@string/replay_tag" android:showAsAction="withText|always"></item>
+    <item android:id="@+id/replayPcd" android:title="@string/replay_pcd" android:showAsAction="withText|always"></item>
+    <item android:id="@+id/delete" android:title="@string/delete" android:showAsAction="withText|ifRoom"></item>
+    <item android:id="@+id/save" android:title="@string/save" android:showAsAction="withText|ifRoom"></item>
+    <item android:id="@+id/export" android:title="@string/export" android:showAsAction="withText|ifRoom"></item>
+</menu>

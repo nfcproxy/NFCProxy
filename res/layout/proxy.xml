@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+
+    <TabHost
+        android:id="@android:id/tabhost"
+        android:layout_width="match_parent"
+        android:layout_height="0dip"
+        android:layout_weight="0.5" >
+
+        <LinearLayout
+            android:id="@+id/linearLayout3"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical" >
+
+            <TabWidget
+                android:id="@android:id/tabs"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" >
+            </TabWidget>
+
+            <FrameLayout
+                android:id="@android:id/tabcontent"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" >
+
+                <ScrollView
+                    android:id="@+id/dataTab"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" >
+
+                    <HorizontalScrollView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" >
+				        
+
+                        <TableLayout
+                            android:id="@+id/dataTable"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fadeScrollbars="false"
+                            android:orientation="vertical" >
+                        </TableLayout>
+                    </HorizontalScrollView>
+                </ScrollView>
+
+                <ScrollView
+                    android:id="@+id/statusTab"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical" >
+
+                    <TextView
+                        android:id="@+id/statusView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fadeScrollbars="false"
+                        android:freezesText="true"
+                        android:scrollbars="vertical"
+                         />
+                </ScrollView>
+                
+                <HorizontalScrollView
+                    android:id="@+id/saveTab"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" >
+
+                    <ListView
+                        android:id="@+id/savedListView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent" >
+                    </ListView>
+                </HorizontalScrollView>
+                
+            </FrameLayout>
+        </LinearLayout>
+    </TabHost>
+
+</LinearLayout>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+    <PreferenceCategory>
+        <CheckBoxPreference android:key="relayPref" android:title="@string/relay_mode" android:summary="@string/mode_desc" />
+    </PreferenceCategory>
+    <PreferenceCategory>
+	    <EditTextPreference android:key="ipPref" android:title="@string/ip" android:summary="@string/ip_desc" android:defaultValue="@string/default_ip" android:inputType="text"/>
+	    <EditTextPreference android:key="protPref" android:title="@string/port" android:inputType="number" android:defaultValue="@string/default_port"/>
+	    <EditTextPreference android:key="passwordPref" android:title="@string/password" android:summary="@string/password_desc" android:inputType="textPassword" android:defaultValue="@string/default_password"/>
+	    <CheckBoxPreference android:key="encryptPref" android:title="@string/encrypt_communications" android:summary="@string/encrypt_desc" android:defaultValue="true"/>
+	    <CheckBoxPreference android:key="screenPref" android:title="@string/keep_screen_on" android:summary="@string/dont_timeout" android:defaultValue="true"/>
+    </PreferenceCategory>
+    <PreferenceCategory>
+        <CheckBoxPreference android:key="debugLogPref" android:title="@string/debug_logging" android:summary="@string/enable_debug_logging" android:defaultValue="false"/>
+    </PreferenceCategory>
+</PreferenceScreen>

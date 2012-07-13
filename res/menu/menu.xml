@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+    <item android:id="@+id/tagModeButton" android:title="@string/t" android:visible="false" android:showAsAction="withText|always" android:enabled="false"></item>
+    <item android:id="@+id/replayModeButton" android:title="@string/p" android:visible="false" android:showAsAction="withText|always" android:enabled="false" ></item>
+    <item android:id="@+id/proxyButton" android:title="@string/return_to_proxy_mode" android:visible="false" android:showAsAction="withText|always"></item>
+	<item android:id="@+id/settingsButton" android:title="@string/settings"></item>
+</menu>

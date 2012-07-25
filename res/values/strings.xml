@@ -36,6 +36,7 @@
     <string name="lost_connection">Lost connection tag?</string>
     <string name="lost_pcd">Lost PCD</string>
     <string name="lost_tag">Lost tag</string>
+    <string name="masked">0x70 [Masked]</string>
     <string name="min_password_length">Min password length is 8</string>
     <string name="mismatched_protocol">Mismatched protocol. Are both ends encrypting?</string>    
     <string name="mode_desc">Runs in relay mode if checked. Proxy mode if not checked.</string>
@@ -93,5 +94,5 @@
     <string name="unknown_host">Unknown host. Use settings to set relay IP address</string>
     <string name="unsupported_tag">Unsupported tag type</string>    
     <string name="waiting">Waiting for tag...</string>
-    <string name="warning_plaintext">(Warning: Stored in plaintext)</string>    
+    <string name="warning_plaintext">(Warning: Stored in plaintext)</string>
 </resources>

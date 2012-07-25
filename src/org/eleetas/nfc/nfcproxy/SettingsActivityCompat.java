@@ -74,24 +74,26 @@ public class SettingsActivityCompat extends PreferenceActivity {
 		PreferenceManager pMan = getPreferenceManager();		
 		pMan.setSharedPreferencesName(NFCVars.PREFERENCES);
 		SharedPreferences prefs = pMan.getSharedPreferences();
-		EditTextPreference ip = (EditTextPreference) findPreference("ipPref");
+		EditTextPreference ip = (EditTextPreference) findPreference("ipPref");		
 		if (prefs.getBoolean("relayPref", true)) {
+			ip.setEnabled(false);
 			String ipAddr = "";
 	        try {
 				//assume IP is on wlan0 interface
 				NetworkInterface net = NetworkInterface.getByName("wlan0");
-				for (Enumeration<InetAddress> enumIpAddr = net.getInetAddresses(); enumIpAddr.hasMoreElements();) {	
-					InetAddress inetAddress = enumIpAddr.nextElement();					 
-						if (inetAddress instanceof Inet4Address) {
-							ipAddr = inetAddress.getHostAddress().toString();
-							break;
-						}
-				}
+				if (net != null) {				
+					for (Enumeration<InetAddress> enumIpAddr = net.getInetAddresses(); enumIpAddr.hasMoreElements();) {	
+						InetAddress inetAddress = enumIpAddr.nextElement();					 
+							if (inetAddress instanceof Inet4Address) {
+								ipAddr = inetAddress.getHostAddress().toString();
+								break;
+							}
+					}
+				}					
 			} catch (SocketException e) {
 				LogHelper.log(this, "Error getting local IPs: " + e.toString());
 			}
 
-			ip.setEnabled(false);
 			if (ipAddr.length() == 0) {
 				ip.setSummary(getString(R.string.enable_wifi));
 			}

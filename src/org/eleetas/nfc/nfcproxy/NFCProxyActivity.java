@@ -112,6 +112,7 @@ public class NFCProxyActivity extends Activity {
     private int mServerPort;
 	private String mServerIP;
 	private boolean mEncrypt = true;
+	private boolean mMask = false;
 	
 	private ActionMode.Callback mTransactionsActionModeCallback = new ActionMode.Callback() {
 
@@ -564,8 +565,12 @@ public class NFCProxyActivity extends Activity {
 	    		String pcdStr = getString(R.string.pcd) + ": ";
 	    		SpannableString msg = new SpannableString(tagStr + TextHelper.byteArrayToHexString(tag.getId()));
 		    	msg.setSpan(new UnderlineSpan(), 0, 4, 0);				    				    	
-				updateData(msg);	    		
+				updateData(msg);	    	
+				boolean foundCC = false;
 	    		for(int i=0; i < pcdRequests.size(); i++) {
+	    			if (foundCC) {
+	    				updateData(""); //print newline. this will probably cause formatting problems later
+	    			}
 	    			byte[] tmp = pcdRequests.getByteArray(String.valueOf(i));
 					msg = new SpannableString(pcdStr + TextHelper.byteArrayToHexString(tmp));
 			    	msg.setSpan(new UnderlineSpan(), 0, 4, 0);				    				    	
@@ -573,8 +578,12 @@ public class NFCProxyActivity extends Activity {
 	    			byte[] reply = tagTech.transceive(tmp);
 
 	    			responses.putByteArray(String.valueOf(i+1), reply);
-	    			
-					msg = new SpannableString(tagStr + TextHelper.byteArrayToHexString(reply));
+	    			if (mMask && reply != null && reply[0] == 0x70) {
+	    				msg = new SpannableString(tagStr + getString(R.string.masked));
+	    			}
+	    			else {
+	    				msg = new SpannableString(tagStr + TextHelper.byteArrayToHexString(reply));
+	    			}
 			    	msg.setSpan(new UnderlineSpan(), 0, 4, 0);				    				    	
 					updateData(msg);	    				    		
 	    			
@@ -600,13 +609,17 @@ updateStatus("new : " + TextHelper.byteArrayToHexString(reply));
 					}
 
 	    			if (reply != null && reply[0] == 0x70) {
-	    				updateData("\n" + TagHelper.parseCC(reply));
+	    				updateData("\n" + TagHelper.parseCC(reply, mMask));
+	    				foundCC = true;
+	    				if (i == pcdRequests.size() - 1) {
+		    				log(getString(R.string.finished_reading));
+		    				updateStatus(getString(R.string.finished_reading));
+	    				}
+	    			}
+					else if (reply != null && reply.length > 3 && reply[0] == 0x77 && reply[2] == (byte)0x9f) {
+						updateData("\n" + TagHelper.parseCryptogram(reply, tmp)); //previous pcdRequest
 	    				log(getString(R.string.finished_reading));
 	    				updateStatus(getString(R.string.finished_reading));
-//return;
-	    			}
-					else if (reply.length > 3 && reply[0] == 0x77 && reply[2] == (byte)0x9f) {
-						updateData("\n" + TagHelper.parseCryptogram(reply, tmp)); //previous pcdRequest
 					}
 
 	    		}
@@ -663,8 +676,15 @@ updateStatus("new : " + TextHelper.byteArrayToHexString(reply));
 	    		String pcdStr = getString(R.string.pcd) + ": ";					
 
 				for (int i=0; i < tagTransactions.size(); i++) {
-					byte []tmp = tagTransactions.getByteArray(String.valueOf(i));					
-					SpannableString msg = new SpannableString(tagStr + TextHelper.byteArrayToHexString(tmp));
+					byte []tmp = tagTransactions.getByteArray(String.valueOf(i));
+					SpannableString msg;
+	    			if (mMask && tmp != null && tmp[0] == 0x70) {
+	    				msg = new SpannableString(tagStr + getString(R.string.masked));
+	    			}
+	    			else {
+	    				msg = new SpannableString(tagStr + TextHelper.byteArrayToHexString(tmp));
+	    			}
+					
 			    	msg.setSpan(new UnderlineSpan(), 0, 4, 0);				    				    	
 					updateData(msg);
 					byte[] reply = (byte[]) meth.invoke(ipcd, tmp);
@@ -829,6 +849,8 @@ log(new String(id));
 
 					byte[] pcdRequest = null;
 					byte[] cardResponse = null;
+		    		String tagStr = getString(R.string.tag) + ": ";
+		    		String pcdStr = getString(R.string.pcd) + ": ";					
 			    	try {
 			    		//TODO:PCD hack. Add support for PCD B
 	    				Class cls = Class.forName(NFCVars.ISO_PCDA_CLASS);
@@ -871,13 +893,13 @@ log(new String(id));
 
 	            		pcdRequest = (byte[])meth.invoke(ipcd, id);
 	            		
-						SpannableString msg = new SpannableString("TAG: " + TextHelper.byteArrayToHexString(id));
+						SpannableString msg = new SpannableString(tagStr + TextHelper.byteArrayToHexString(id));
 				    	msg.setSpan(new UnderlineSpan(), 0, 4, 0);				    	
 				    	responses.putByteArray(String.valueOf(responses.size()), id);
 						updateDataUI(msg);
 log("sent id to pcd: " + TextHelper.byteArrayToHexString(id));
 												
-						msg = new SpannableString("PCD: " + TextHelper.byteArrayToHexString(pcdRequest));
+						msg = new SpannableString(pcdStr + TextHelper.byteArrayToHexString(pcdRequest));
 					    msg.setSpan(new UnderlineSpan(), 0, 4, 0);					    
 					    requests.putByteArray(String.valueOf(requests.size()), pcdRequest);
 						updateDataUI(msg);												
@@ -908,7 +930,13 @@ log(new String(cardResponse));
 								
 								
 							log("sending card response to PCD");
-							msg = new SpannableString("TAG: " + TextHelper.byteArrayToHexString(cardResponse));
+			    			if (mMask && cardResponse[0] == 0x70) {
+			    				msg = new SpannableString(tagStr + getString(R.string.masked));
+			    			}
+			    			else {
+			    				msg = new SpannableString(tagStr + TextHelper.byteArrayToHexString(cardResponse));
+			    			}
+							
 						    msg.setSpan(new UnderlineSpan(), 0, 4, 0);					    
 						    responses.putByteArray(String.valueOf(responses.size()), cardResponse);
 						    updateDataUI(msg);										    						
@@ -919,7 +947,7 @@ log(new String(cardResponse));
 									if (e.getCause() instanceof IOException && e.getCause().getMessage().equals("Transceive failed")) {										
 										//update UI only after sending cardResponse to PCD
 										if (cardResponse[0] == 0x70) {
-											updateDataUI("\n" + TagHelper.parseCC(cardResponse));
+											updateDataUI("\n" + TagHelper.parseCC(cardResponse, mMask));
 										}
 										else if (cardResponse.length > 3 && cardResponse[0] == 0x77 && cardResponse[2] == (byte)0x9f) {
 											updateDataUI("\n" + TagHelper.parseCryptogram(cardResponse, pcdRequest)); //previous pcdRequest
@@ -932,14 +960,14 @@ log(new String(cardResponse));
 									throw e;
 								}
 								if (cardResponse[0] == 0x70) {
-									updateDataUI("\n" + TagHelper.parseCC(cardResponse));
+									updateDataUI("\n" + TagHelper.parseCC(cardResponse, mMask) + "\n");
 								}
 							}		    						
 							else {
 								pcdRequest = (byte[])meth.invoke(ipcd, cardResponse);
-							}						
+							}					
 							requests.putByteArray(String.valueOf(requests.size()), pcdRequest);
-    						msg = new SpannableString("PCD: " + TextHelper.byteArrayToHexString(pcdRequest));
+    						msg = new SpannableString(pcdStr + TextHelper.byteArrayToHexString(pcdRequest));
 						    msg.setSpan(new UnderlineSpan(), 0, 4, 0);
 							updateDataUI(msg);									
 
@@ -1326,7 +1354,7 @@ log("selectedID: " + mSelectedId);
 		}
 	}
 
-    private void log(Object msg) {
+    private void log(Object msg) {    	
     	if (mDebugLogging) {
     		LogHelper.log(this, msg);
     	}

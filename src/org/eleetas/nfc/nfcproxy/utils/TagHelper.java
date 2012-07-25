@@ -6,7 +6,7 @@ import java.util.Formatter;
 
 public class TagHelper {
 
-    public static String parseCC(byte []data) {
+    public static String parseCC(byte []data, boolean mask) {
     	//check if data is an EMV Record Template and Track 2 equivalent data is present
     	if (data.length > 3 && data[0] == 0x70 && data[2] == 0x57) {
     		//TODO: Length error checking
@@ -23,11 +23,11 @@ public class TagHelper {
 				e.printStackTrace();
 			}
 	
-			sb.append(parseTrack2(data, 4));
+			sb.append(parseTrack2(data, 4, mask));
 	        
 	        sb.append("\niCVV: ");
 	        Formatter format = new Formatter();					//print actual byte order. differs from readable format.
-	        sb.append(format.format("%02x%1x%02x %02x (0x%02x 0x%02x 0x%02x 0x%02x)", data[PANOffset + 8 + 8], data[PANOffset + 8 + 6], data[PANOffset + 8 + 7], data[PANOffset + 8 + 9], data[PANOffset + 8 + 6], data[PANOffset + 8 + 7], data[PANOffset + 8 + 8], data[PANOffset + 8 + 9]).toString());
+	        sb.append(format.format("%02x%1x%02x%02x (0x%02x 0x%02x 0x%02x 0x%02x)", data[PANOffset + 8 + 8], data[PANOffset + 8 + 6], data[PANOffset + 8 + 7], data[PANOffset + 8 + 9], data[PANOffset + 8 + 6], data[PANOffset + 8 + 7], data[PANOffset + 8 + 8], data[PANOffset + 8 + 9]).toString());
 	        //format = new Formatter();
 	        //sb.append(format.format("%02x%1x%1x%1x", data[OFFSET_CC + 8 + 8], data[OFFSET_CC + 8 + 6], data[OFFSET_CC + 8 + 7], data[OFFSET_CC + 8 + 9]));
 	        return sb.toString();
@@ -61,7 +61,7 @@ public class TagHelper {
     		 * balance of available bytes
     		 */
 
-    		return parseTrack1(data, 11);
+    		return parseTrack1(data, 11, mask);
     	}
     	else {
     		return "Unsupported CC format";
@@ -70,23 +70,28 @@ public class TagHelper {
     }       
  
 	//TODO: Length error checking
-    public static String parseTrack2(byte[] track2, int offset) {
+    public static String parseTrack2(byte[] track2, int offset, boolean mask) {
     	int PANLength = 8;
     	int expOffset = offset + PANLength + 1;
     	int svcOffset = offset + PANLength + 3;
     	
     	StringBuilder sb = new StringBuilder();
-        sb.append("\nCard Number: ");        
-        String ccnum="";
+        sb.append("\nCard Number: ");
+        String ccnum = "";
         
-    	for(int i = 0; i < PANLength; i++) {                
-			Formatter format = new Formatter();
-            ccnum += format.format("%02x", track2[offset + i]).toString();	                        
-    	}
+        if (!mask) {
+	    	for(int i = 0; i < PANLength; i++) {                
+				Formatter format = new Formatter();
+	            ccnum += format.format("%02x", track2[offset + i]).toString();	                        
+	    	}
+        }
+        else {
+        	ccnum = "XXXXXXXXXXXXXXXX";
+        }
         sb.append(ccnum);
         
         sb.append("\nExpiration Date: ");
-        String exp="";
+        String exp = "";
         Formatter format = new Formatter();        
         short high = 0;
         high |= track2[expOffset] & 0xFF;               
@@ -94,8 +99,13 @@ public class TagHelper {
         low |= track2[expOffset + 1] & 0xFF;
         short full = (short) ((high << 12) + (low << 4) | (high >>> 4));
 
-        //TODO: internationalize...right now mm/yy
-        exp += format.format("%02x/%02x", (byte)(full >>> 8), (byte)((full << 8) >>> 8) ).toString();
+        if (!mask) {
+	        //TODO: internationalize...right now mm/yy
+	        exp += format.format("%02x/%02x", (byte)(full >>> 8), (byte)((full << 8) >>> 8) ).toString();
+        }
+        else {
+        	exp = "XX/XX";
+        }
         sb.append(exp);
         
         sb.append("\nService Code: ");
@@ -115,7 +125,7 @@ public class TagHelper {
         return sb.toString();    	
     }
     
-    public static String parseTrack1(byte[] track1, int offset) {
+    public static String parseTrack1(byte[] track1, int offset, boolean mask) {
     	//TODO: Length error checking
     	int PANLength = 16;
     	int nameOffset = offset + PANLength + 1;
@@ -137,17 +147,25 @@ public class TagHelper {
         sb.append(name.trim());
         
         sb.append("\nCard Number: ");        
-        String ccnum="";
-        
-        ccnum = new String(track1, offset, PANLength);        
+        String ccnum = "";
+        if (!mask) {
+            ccnum = new String(track1, offset, PANLength);        }
+        else {
+        	ccnum = "XXXXXXXXXXXXXXXX";
+        }        
         sb.append(ccnum);
         
         sb.append("\nExpiration Date: ");
-        
-        String yr = new String(track1, expOffset, 2);
-        String mo = new String(track1, expOffset + 2, 2);
-        //TODO: internationalize...right now mm/yy
-        String exp = mo + "/" + yr; 
+        String exp = "";
+        if (!mask) {        
+	        String yr = new String(track1, expOffset, 2);
+	        String mo = new String(track1, expOffset + 2, 2);
+	        //TODO: internationalize...right now mm/yy
+	        exp = mo + "/" + yr;
+        }
+        else {
+        	exp = "XX/XX";
+        }
         sb.append(exp);
         
         sb.append("\nService Code: ");

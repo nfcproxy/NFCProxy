@@ -111,17 +111,24 @@ public class NFCRelayActivity extends Activity {
         try {
 			//assume IP is on wlan0 interface
 			NetworkInterface net = NetworkInterface.getByName("wlan0");
-			for (Enumeration<InetAddress> enumIpAddr = net.getInetAddresses(); enumIpAddr.hasMoreElements();) {	
-				InetAddress inetAddress = enumIpAddr.nextElement();					 
-					if (inetAddress instanceof Inet4Address) {
-						ipAddr = inetAddress.getHostAddress().toString();
-						break;
-					}
+			if (net != null) {
+				for (Enumeration<InetAddress> enumIpAddr = net.getInetAddresses(); enumIpAddr.hasMoreElements();) {	
+					InetAddress inetAddress = enumIpAddr.nextElement();					 
+						if (inetAddress instanceof Inet4Address) {
+							ipAddr = inetAddress.getHostAddress().toString();
+							break;
+						}
+				}				
 			}
 		} catch (SocketException e) {
 			log("Error getting local IPs: " + e.toString());
 		}
-		updateUIandScroll(ipAddr);
+		if (ipAddr.length() == 0) {
+			updateUIandScroll(getString(R.string.enable_wifi));
+		}
+		else {
+			updateUIandScroll(ipAddr);
+		}		
     }
     
     public void updateUIandScroll(CharSequence msg) {

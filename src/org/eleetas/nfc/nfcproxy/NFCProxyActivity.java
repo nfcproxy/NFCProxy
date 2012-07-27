@@ -109,7 +109,7 @@ public class NFCProxyActivity extends Activity {
 	private int mMode = PROXY_MODE;
 	
 	private boolean mDebugLogging = false;
-    private int mServerPort;
+	private int mServerPort;
 	private String mServerIP;
 	private boolean mEncrypt = true;
 	private boolean mMask = false;
@@ -609,7 +609,7 @@ updateStatus("new : " + TextHelper.byteArrayToHexString(reply));
 					}
 
 	    			if (reply != null && reply[0] == 0x70) {
-	    				updateData("\n" + TagHelper.parseCC(reply, mMask));
+	    				updateData("\n" + TagHelper.parseCC(reply, pcdRequests.getByteArray(String.valueOf(i - 1)), mMask));
 	    				foundCC = true;
 	    				if (i == pcdRequests.size() - 1) {
 		    				log(getString(R.string.finished_reading));
@@ -947,7 +947,7 @@ log(new String(cardResponse));
 									if (e.getCause() instanceof IOException && e.getCause().getMessage().equals("Transceive failed")) {										
 										//update UI only after sending cardResponse to PCD
 										if (cardResponse[0] == 0x70) {
-											updateDataUI("\n" + TagHelper.parseCC(cardResponse, mMask));
+											updateDataUI("\n" + TagHelper.parseCC(cardResponse, requests.getByteArray(String.valueOf(requests.size() - 2)), mMask));
 										}
 										else if (cardResponse.length > 3 && cardResponse[0] == 0x77 && cardResponse[2] == (byte)0x9f) {
 											updateDataUI("\n" + TagHelper.parseCryptogram(cardResponse, pcdRequest)); //previous pcdRequest
@@ -960,7 +960,7 @@ log(new String(cardResponse));
 									throw e;
 								}
 								if (cardResponse[0] == 0x70) {
-									updateDataUI("\n" + TagHelper.parseCC(cardResponse, mMask) + "\n");
+									updateDataUI("\n" + TagHelper.parseCC(cardResponse, requests.getByteArray(String.valueOf(requests.size() - 2)), mMask) + "\n");
 								}
 							}		    						
 							else {

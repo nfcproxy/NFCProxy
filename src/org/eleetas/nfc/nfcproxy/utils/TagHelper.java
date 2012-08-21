@@ -11,111 +11,115 @@ public class TagHelper {
 	
     public static String parseCC(byte []data, byte[] previousPCDRequest, boolean mask) {
     	
-    	//VISA
-    	//check if data is an EMV Record Template and Track 2 equivalent data is present
-    	if (data.length > 3 && data[0] == 0x70 && data[2] == 0x57) {
-    		//TODO: Length error checking
-
-            int PANOffset = 4;
-            int PANLength = 8;
-            int nameOffset = 23;
-    		
-	        StringBuilder sb = new StringBuilder();	        
-	        sb.append("Name: ");   
-	        int length = data[nameOffset + 2]; //TODO: validate or parse
-	        try {
-				sb.append(new String(data, nameOffset + 3, length, "UTF-8"));
-			} catch (UnsupportedEncodingException e) {
-				e.printStackTrace();
-			}
+    	try {
+	    	//VISA
+	    	//check if data is an EMV Record Template and Track 2 equivalent data is present
+	    	if (data.length > 3 && data[0] == 0x70 && data[2] == 0x57) {
+	    		//TODO: Length error checking
 	
-			sb.append(parseTrack2(data, PANOffset, mask));
-
-	        sb.append("\niCVV: ");
-	        Formatter format = new Formatter(); //print actual byte order. differs from readable format.
-	        sb.append(format.format("%02x%1x%02x%02x (0x%02x 0x%02x 0x%02x 0x%02x)", data[PANOffset + PANLength + 8], data[PANOffset + PANLength + 6], data[PANOffset + PANLength + 7], data[PANOffset + PANLength + 9], data[PANOffset + PANLength + 6], data[PANOffset + PANLength + 7], data[PANOffset + PANLength + 8], data[PANOffset + PANLength + 9]).toString());
-			
-	        return sb.toString();
+	            int PANOffset = 4;
+	            int PANLength = 8;
+	            int nameOffset = 23;
+	    		
+		        StringBuilder sb = new StringBuilder();	        
+		        sb.append("Name: ");   
+		        int length = data[nameOffset + 2]; //TODO: validate or parse
+		        try {
+					sb.append(new String(data, nameOffset + 3, length, "UTF-8"));
+				} catch (UnsupportedEncodingException e) {
+					e.printStackTrace();
+				}
+		
+				sb.append(parseTrack2(data, PANOffset, mask));
+	
+		        sb.append("\niCVV: ");
+		        Formatter format = new Formatter(); //print actual byte order. differs from readable format.
+		        sb.append(format.format("%02x%1x%02x%02x (0x%02x 0x%02x 0x%02x 0x%02x)", data[PANOffset + PANLength + 8], data[PANOffset + PANLength + 6], data[PANOffset + PANLength + 7], data[PANOffset + PANLength + 9], data[PANOffset + PANLength + 6], data[PANOffset + PANLength + 7], data[PANOffset + PANLength + 8], data[PANOffset + PANLength + 9]).toString());
+				
+		        return sb.toString();
+	    	}
+	    	//MASTERCARD
+			//TODO: HACK. response looks like: 0x70 0x81 0x9e 0x9f 0x6c 0x02 0x00 0x01 0x56 0x4c 0x42
+	    	else if (data.length > 9 && data[0] == 0x70 && data[8] == 0x56 ) {
+	    		//TODO: Length error checking
+	    		/*
+	    		 * PayPass Ð M/ChipTechnical Specifications (https://docs.google.com/viewer?a=v&q=cache:O0rYe0zxyegJ:read.pudn.com/downloads161/doc/725864/PayPass%2520-%2520MChip%2520(V1.3).pdf+mastercard+mchip+technical+specification&hl=en&gl=us&pid=bl&srcid=ADGEESjl5lr24scpx8am0GSqalJj0iIa7NZNK1_XGsjw0pUqBnhIlCH4ZLu4UcbQKHP3IQxTNDbcWRSeu0sSbShZ7SInM0afHwwO6S5VOgrqvj4l44mO9UeltVVreEfRyCMUM8sLIqWm&sig=AHIEtbTWQac_EGUzlfP4hZiFavpSJnmsCw)
+	    		 * 
+	    		 * Tag: Ô56Õ
+	    		 * ans, variable length up to 76 bytes
+	    		 * The Track 1 Data contains the data elements of the track 1 according
+	    		 * to ISO/IEC 7813 Structure B, excluding start sentinel, end sentinel
+	    		 * and LRC.
+	    		 * Format Code (hex Ô42Õ (B))
+	    		 * 1 byte
+	    		 * Identification Number (PAN)
+	    		 * var. up to 19 bytes
+	    		 * Field Separator (hex. Ô5EÕ (^))
+	    		 * 1 byte
+	    		 * Name (see ISO/IEC 7813)
+	    		 * 2 to 26 bytes
+	    		 * Field Separator (hex. Ô5EÕ (^))
+	    		 * 1 byte
+	    		 * Expiry Date (YYMM)
+	    		 * 4 bytes
+	    		 * Service Code
+	    		 * 3 bytes
+	    		 * Discretionary Data
+	    		 * balance of available bytes
+	    		 */
+	
+	    		return parseTrack1(data, 11, mask);
+	    	}
+	    	//DISCOVER CARD
+			//TODO: HACK. response looks like: 0x70 0x5e 0x56 0x41 0x42 X
+	    	else if (data.length > 3 && data[0] == 0x70 && data[2] == 0x56 && data[2 + 1 + 65 + 1] == 0x57) {
+	    		int track2Offset = 2 + 1 + 65 + 1 + 2; //+2 is where data begins
+	    		int PANLength = 8;
+	    		int nameOffset= 22;
+		    	int counterOffset = track2Offset + PANLength + 8;
+		    	int randOffset = track2Offset + PANLength + 14;
+	
+	    		
+	    		if (data.length < nameOffset) return "Unsupported CC format";
+	    		
+		        StringBuilder sb = new StringBuilder();	        
+		        sb.append("Name: ");
+		        	        
+		        for (int i = nameOffset; i <data.length; i++ ) {
+			        byte c = data[i];
+			        if (c == 0x5e) break;
+			        sb.append((char)c);
+		        }
+	
+	    		sb.append(parseTrack2(data, track2Offset, mask));
+	    		
+	    		byte counter1 = data[counterOffset];
+	    		byte counter2 = (byte) ((data[counterOffset + 1] >> 4) & 0x0F);
+	    		
+	    		byte rand1 = data[randOffset];
+	    		byte rand2 = data[randOffset + 1];
+	    		byte rand3 = data[randOffset + 2];
+	    		
+		        sb.append("\niCVV: ");
+		        Formatter format = new Formatter(); //print actual byte order. differs from readable format.
+	    		
+	    		if (previousPCDRequest != null && previousPCDRequest.length > 8) {
+	    			
+					sb.append(format.format("%1x%1x%1x%02x%01x%02x", rand1, rand2, rand3, counter1, counter2, previousPCDRequest[7]).toString());
+	    		}
+	    		else {
+	    			sb.append(format.format("%1x%1x%1x%02x%01xXX", rand1, rand2, rand3, counter1, counter2).toString());
+	    		}	        
+	
+	    		return sb.toString();
+	    	}
+	    	else {
+	    		return "Unsupported CC format (replay should still be OK)";
+	    	}
     	}
-    	//MASTERCARD
-		//TODO: HACK. response looks like: 0x70 0x81 0x9e 0x9f 0x6c 0x02 0x00 0x01 0x56 0x4c 0x42
-    	else if (data.length > 9 && data[0] == 0x70 && data[8] == 0x56 ) {
-    		//TODO: Length error checking
-    		/*
-    		 * PayPass Ð M/ChipTechnical Specifications (https://docs.google.com/viewer?a=v&q=cache:O0rYe0zxyegJ:read.pudn.com/downloads161/doc/725864/PayPass%2520-%2520MChip%2520(V1.3).pdf+mastercard+mchip+technical+specification&hl=en&gl=us&pid=bl&srcid=ADGEESjl5lr24scpx8am0GSqalJj0iIa7NZNK1_XGsjw0pUqBnhIlCH4ZLu4UcbQKHP3IQxTNDbcWRSeu0sSbShZ7SInM0afHwwO6S5VOgrqvj4l44mO9UeltVVreEfRyCMUM8sLIqWm&sig=AHIEtbTWQac_EGUzlfP4hZiFavpSJnmsCw)
-    		 * 
-    		 * Tag: Ô56Õ
-    		 * ans, variable length up to 76 bytes
-    		 * The Track 1 Data contains the data elements of the track 1 according
-    		 * to ISO/IEC 7813 Structure B, excluding start sentinel, end sentinel
-    		 * and LRC.
-    		 * Format Code (hex Ô42Õ (B))
-    		 * 1 byte
-    		 * Identification Number (PAN)
-    		 * var. up to 19 bytes
-    		 * Field Separator (hex. Ô5EÕ (^))
-    		 * 1 byte
-    		 * Name (see ISO/IEC 7813)
-    		 * 2 to 26 bytes
-    		 * Field Separator (hex. Ô5EÕ (^))
-    		 * 1 byte
-    		 * Expiry Date (YYMM)
-    		 * 4 bytes
-    		 * Service Code
-    		 * 3 bytes
-    		 * Discretionary Data
-    		 * balance of available bytes
-    		 */
-
-    		return parseTrack1(data, 11, mask);
+    	catch (Exception e) {
+    		return "Unsupported CC format (replay should still be OK)";
     	}
-    	//DISCOVER CARD
-		//TODO: HACK. response looks like: 0x70 0x5e 0x56 0x41 0x42 X
-    	else if (data.length > 3 && data[0] == 0x70 && data[2] == 0x56 && data[2 + 1 + 65 + 1] == 0x57) {
-    		int track2Offset = 2 + 1 + 65 + 1 + 2; //+2 is where data begins
-    		int PANLength = 8;
-    		int nameOffset= 22;
-	    	int counterOffset = track2Offset + PANLength + 8;
-	    	int randOffset = track2Offset + PANLength + 14;
-
-    		
-    		if (data.length < nameOffset) return "Unsupported CC format";
-    		
-	        StringBuilder sb = new StringBuilder();	        
-	        sb.append("Name: ");
-	        	        
-	        for (int i = nameOffset; i <data.length; i++ ) {
-		        byte c = data[i];
-		        if (c == 0x5e) break;
-		        sb.append((char)c);
-	        }
-
-    		sb.append(parseTrack2(data, track2Offset, mask));
-    		
-    		byte counter1 = data[counterOffset];
-    		byte counter2 = (byte) ((data[counterOffset + 1] >> 4) & 0x0F);
-    		
-    		byte rand1 = data[randOffset];
-    		byte rand2 = data[randOffset + 1];
-    		byte rand3 = data[randOffset + 2];
-    		
-	        sb.append("\niCVV: ");
-	        Formatter format = new Formatter(); //print actual byte order. differs from readable format.
-    		
-    		if (previousPCDRequest != null && previousPCDRequest.length > 8) {
-    			
-				sb.append(format.format("%1x%1x%1x%02x%01x%02x", rand1, rand2, rand3, counter1, counter2, previousPCDRequest[7]).toString());
-    		}
-    		else {
-    			sb.append(format.format("%1x%1x%1x%02x%01xXX", rand1, rand2, rand3, counter1, counter2).toString());
-    		}	        
-
-    		return sb.toString();
-    	}
-    	else {
-    		return "Unsupported CC format";
-    	}
-    
     }       
  
 	//TODO: Length error checking

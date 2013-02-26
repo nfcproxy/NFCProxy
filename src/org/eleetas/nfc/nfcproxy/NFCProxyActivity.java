@@ -37,8 +37,10 @@ import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import android.app.Activity;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.database.Cursor;
@@ -350,6 +352,14 @@ public class NFCProxyActivity extends Activity {
 	protected void onResume() {		
 		log("onResume start");		
 		super.onResume();
+		
+		NfcAdapter adapter = NfcAdapter.getDefaultAdapter(this);
+		if (adapter != null) {
+			IntentFilter intentFilter[] = { new IntentFilter(NfcAdapter.ACTION_TAG_DISCOVERED) };
+			PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, new Intent(this, getClass()), 0);
+			adapter.enableForegroundDispatch(this, pendingIntent, intentFilter, new String[][] { new String[] { NFCVars.ISO_PCDA_CLASS } });
+		}
+		
 		Intent intent = getIntent(); 
 		
 		SharedPreferences prefs = getSharedPreferences(NFCVars.PREFERENCES, Context.MODE_PRIVATE);		
@@ -449,6 +459,11 @@ public class NFCProxyActivity extends Activity {
 	protected void onPause() {
 		super.onPause();
 		
+		NfcAdapter adapter = NfcAdapter.getDefaultAdapter(this);
+		if (adapter != null) {
+			adapter.disableForegroundDispatch(this);
+		}
+
 		if (mWakeLock != null) {			
 			mWakeLock.release();
 		}

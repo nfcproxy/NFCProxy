@@ -36,6 +36,7 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.PendingIntent;
 import android.content.Context;
@@ -78,6 +79,7 @@ import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.Toast;
 
+@SuppressLint("NewApi")
 public class NFCProxyActivity extends Activity {
     
 	private static final int PROXY_MODE = 0;
@@ -202,6 +204,21 @@ public class NFCProxyActivity extends Activity {
 	    MenuInflater inflater = getMenuInflater();
 	    inflater.inflate(R.menu.menu, menu);
 	    mOptionsMenu = menu;	    
+        if (mMode == PROXY_MODE) {
+        	mOptionsMenu.getItem(0).setVisible(false);
+	        mOptionsMenu.getItem(1).setVisible(false);
+	        mOptionsMenu.getItem(2).setVisible(false);        
+        }
+        else if (mMode == REPLAY_PCD_MODE) {
+        	mOptionsMenu.getItem(0).setVisible(false);
+	        mOptionsMenu.getItem(1).setVisible(true);
+	        mOptionsMenu.getItem(2).setVisible(true);        	
+        }
+        else if (mMode == REPLAY_TAG_MODE) {
+        	mOptionsMenu.getItem(0).setVisible(true);
+	        mOptionsMenu.getItem(1).setVisible(false);
+	        mOptionsMenu.getItem(2).setVisible(true);        	        	
+        }	    
 	    return true;
 	}	
 	
@@ -1341,21 +1358,20 @@ log("selectedID: " + mSelectedId);
         mSessions = savedInstanceState.getBundle("sessions");
         mReplaySession = savedInstanceState.getBundle("replaySession");
         mMode = savedInstanceState.getInt("mode");
-        if (mMode == PROXY_MODE) {
+        if (mOptionsMenu != null && mMode == PROXY_MODE) {
         	mOptionsMenu.getItem(0).setVisible(false);
 	        mOptionsMenu.getItem(1).setVisible(false);
 	        mOptionsMenu.getItem(2).setVisible(false);        
         }
-        else if (mMode == REPLAY_PCD_MODE) {
+        else if (mOptionsMenu != null && mMode == REPLAY_PCD_MODE) {
         	mOptionsMenu.getItem(0).setVisible(false);
 	        mOptionsMenu.getItem(1).setVisible(true);
 	        mOptionsMenu.getItem(2).setVisible(true);        	
         }
-        else if (mMode == REPLAY_TAG_MODE) {
+        else if (mOptionsMenu != null && mMode == REPLAY_TAG_MODE) {
         	mOptionsMenu.getItem(0).setVisible(true);
 	        mOptionsMenu.getItem(1).setVisible(false);
-	        mOptionsMenu.getItem(2).setVisible(true);        	
-        	
+	        mOptionsMenu.getItem(2).setVisible(true);        	        	
         }
 	}
 	/* (non-Javadoc)
